@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<title>Apresentação - Arquitetura, Modelagem, Multiusuário e Backup em Banco de Dados</title>
+<style>
+:root {
+  --bg:#07111f; --bg2:#0f172a; --panel:rgba(15,23,42,.91); --panel2:rgba(30,41,59,.86);
+  --text:#f8fafc; --muted:#cbd5e1; --soft:#94a3b8; --line:rgba(148,163,184,.28);
+  --brand:#38bdf8; --brand2:#22c55e; --warn:#f59e0b; --danger:#fb7185; --code:#020617;
+  --radius:28px; --shadow:0 28px 90px rgba(0,0,0,.42);
+  --sans:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono:"Cascadia Code","Consolas","SFMono-Regular","Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--sans);color:var(--text);background:radial-gradient(circle at 10% 10%,rgba(56,189,248,.22),transparent 32%),radial-gradient(circle at 90% 15%,rgba(34,197,94,.18),transparent 32%),linear-gradient(135deg,#020617 0%,#07111f 45%,#0f172a 100%);overflow:hidden}
+.deck{height:100%;width:100%;position:relative}
+.progress{position:fixed;top:0;left:0;width:100%;height:6px;background:rgba(255,255,255,.08);z-index:40}
+.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .25s ease}
+.slide{position:absolute;inset:0;display:grid;place-items:center;padding:clamp(14px,2.2vw,34px);opacity:0;transform:translateX(34px) scale(.985);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+.slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+.card{width:min(1220px,100%);height:min(780px,calc(100dvh - 90px));background:linear-gradient(180deg,var(--panel),rgba(15,23,42,.82));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(20px,3vw,46px);overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(56,189,248,.55) transparent;display:flex;flex-direction:column}
+.card::-webkit-scrollbar{height:8px;width:8px} .card::-webkit-scrollbar-thumb{background:rgba(56,189,248,.55);border-radius:20px}
+.eyebrow{display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--brand);font-weight:800;font-size:clamp(13px,1.2vw,17px);margin-bottom:14px}
+.dot{width:12px;height:12px;border-radius:999px;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 0 22px rgba(56,189,248,.8);flex:0 0 auto}
+h1{font-size:clamp(31px,4.5vw,58px);line-height:1.03;margin:0 0 18px;font-weight:900;letter-spacing:-.04em;color:#fff}
+.title h1{font-size:clamp(37px,6vw,76px)}
+.lead{font-size:clamp(20px,2.1vw,31px);line-height:1.35;margin:0 0 22px;color:#e2e8f0;font-weight:600}
+.bullets{display:grid;gap:13px;margin:10px 0 0;padding:0;list-style:none}
+.bullets li{position:relative;padding-left:34px;font-size:clamp(19px,1.95vw,27px);line-height:1.32;color:#f1f5f9}
+.bullets li::before{content:"";position:absolute;left:2px;top:.52em;width:13px;height:13px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 0 12px rgba(56,189,248,.55)}
+.note{margin-top:22px;border-left:6px solid var(--warn);background:rgba(245,158,11,.11);padding:16px 18px;border-radius:16px;font-size:clamp(18px,1.7vw,24px);line-height:1.35;color:#fffbeb}
+.table-wrap{overflow:auto;margin-top:15px;border:1px solid var(--line);border-radius:18px}
+table{width:100%;border-collapse:collapse;font-size:clamp(17px,1.55vw,23px);line-height:1.28}
+th{background:rgba(56,189,248,.18);color:#fff;text-align:left;font-size:clamp(17px,1.5vw,22px)}
+th,td{padding:13px 15px;border-bottom:1px solid rgba(148,163,184,.22);vertical-align:top}
+tr:last-child td{border-bottom:none}
+pre{position:relative;background:var(--code);border:1px solid rgba(56,189,248,.28);border-radius:20px;margin:18px 0 0;padding:20px 20px 18px;overflow:auto;max-height:42vh}
+code{font-family:var(--mono);font-size:clamp(15px,1.25vw,20px);line-height:1.45;color:#dbeafe;white-space:pre}
+.copy{position:sticky;float:right;top:0;right:0;margin-left:10px;background:rgba(56,189,248,.18);border:1px solid rgba(56,189,248,.45);color:#e0f2fe;border-radius:999px;padding:7px 12px;font-weight:800;cursor:pointer}
+.footer{margin-top:auto;padding-top:20px;display:flex;justify-content:space-between;gap:18px;align-items:end;color:#bfdbfe;font-size:clamp(12px,1.1vw,15px);line-height:1.3;border-top:1px solid rgba(148,163,184,.15)}
+.controls{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:rgba(2,6,23,.78);backdrop-filter:blur(16px);border:1px solid rgba(148,163,184,.26);border-radius:999px;padding:9px;z-index:50;box-shadow:0 18px 55px rgba(0,0,0,.35)}
+.controls button,.toc-toggle{appearance:none;border:0;background:rgba(148,163,184,.18);color:#fff;border-radius:999px;padding:11px 15px;font-size:16px;font-weight:800;cursor:pointer;min-width:46px}
+.controls button:hover,.toc-toggle:hover{background:rgba(56,189,248,.25)}
+.counter{min-width:86px;text-align:center;color:#e2e8f0;font-weight:900;font-size:15px}
+.toc-toggle{position:fixed;right:16px;top:18px;z-index:60}
+.toc{position:fixed;inset:0;display:none;z-index:55;background:rgba(2,6,23,.82);backdrop-filter:blur(18px);padding:clamp(18px,3vw,40px);overflow:auto}
+.toc.open{display:block}
+.toc-panel{max-width:1000px;margin:0 auto;background:rgba(15,23,42,.96);border:1px solid var(--line);border-radius:26px;padding:28px;box-shadow:var(--shadow)}
+.toc h2{margin:0 0 18px;font-size:clamp(30px,4vw,48px)}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.toc-grid button{text-align:left;border:1px solid rgba(148,163,184,.22);background:rgba(30,41,59,.8);color:#f8fafc;border-radius:16px;padding:13px 14px;font-size:16px;font-weight:700;cursor:pointer;line-height:1.25}
+.toc-grid span{display:inline-grid;place-items:center;margin-right:10px;width:34px;height:28px;border-radius:10px;background:rgba(56,189,248,.18);color:#7dd3fc}
+.help{position:fixed;left:18px;top:20px;color:#cbd5e1;font-size:13px;z-index:45;opacity:.85}
+@media (max-width:760px){
+  body{overflow:hidden}
+  .slide{padding:12px}
+  .card{height:calc(100dvh - 82px);padding:22px 18px;border-radius:22px}
+  h1{font-size:clamp(30px,9vw,46px)} .title h1{font-size:clamp(34px,10vw,52px)}
+  .lead{font-size:clamp(19px,5.4vw,25px)} .bullets li{font-size:clamp(18px,5vw,24px);padding-left:28px}
+  table{font-size:16px} th,td{padding:10px 11px}
+  pre{max-height:44vh;padding:16px} code{font-size:14px}
+  .footer{font-size:11px;gap:10px;align-items:flex-start;flex-direction:column}
+  .help{display:none} .toc-toggle{right:10px;top:12px;padding:10px 13px}
+  .controls{bottom:calc(8px + env(safe-area-inset-bottom));gap:6px;padding:7px}
+  .controls button{padding:10px 12px;min-width:42px}
+  .counter{min-width:70px;font-size:13px}
+}
+@media print{body{overflow:visible;background:#fff;color:#111}.progress,.controls,.toc-toggle,.help,.copy{display:none!important}.deck{height:auto}.slide{position:relative;display:block;opacity:1;transform:none;page-break-after:always;padding:0;background:#fff;color:#111}.card{height:auto;box-shadow:none;border:0;background:#fff;color:#111;border-radius:0}h1,.lead,.bullets li,td,th,.note{color:#111}pre{white-space:pre-wrap;background:#f1f5f9}code{color:#111}.footer{color:#333}}
+</style>
+</head>
+<body>
+<div class="progress"><span id="bar"></span></div>
+<div class="help">Use ← →, toque/deslize no celular ou abra o sumário.</div>
+<button class="toc-toggle" type="button" id="tocBtn">Sumário</button>
+<div class="toc" id="toc"><div class="toc-panel"><h2>Sumário da apresentação</h2><div class="toc-grid"><button type="button" data-jump="0"><span>01</span>Arquitetura, Modelagem, Multiusuário, Backup e Prototipação de Banco de Dados</button><button type="button" data-jump="1"><span>02</span>Objetivo da aula</button><button type="button" data-jump="2"><span>03</span>Roteiro da aula</button><button type="button" data-jump="3"><span>04</span>O que é um SGBD?</button><button type="button" data-jump="4"><span>05</span>Exemplos de SGBD</button><button type="button" data-jump="5"><span>06</span>MySQL Server, Workbench e Banco de Dados</button><button type="button" data-jump="6"><span>07</span>Arquitetura cliente-servidor</button><button type="button" data-jump="7"><span>08</span>O que acontece em um SELECT?</button><button type="button" data-jump="8"><span>09</span>Arquitetura de três níveis</button><button type="button" data-jump="9"><span>10</span>Nível externo</button><button type="button" data-jump="10"><span>11</span>Nível conceitual</button><button type="button" data-jump="11"><span>12</span>Nível interno</button><button type="button" data-jump="12"><span>13</span>SGBD multiusuário</button><button type="button" data-jump="13"><span>14</span>Problemas em ambiente multiusuário</button><button type="button" data-jump="14"><span>15</span>Como o MySQL ajuda?</button><button type="button" data-jump="15"><span>16</span>Prática: banco multiusuário</button><button type="button" data-jump="16"><span>17</span>Prática: Conexão 1</button><button type="button" data-jump="17"><span>18</span>Prática: Conexão 2</button><button type="button" data-jump="18"><span>19</span>Finalizar a transação</button><button type="button" data-jump="19"><span>20</span>Modelagem de requisitos</button><button type="button" data-jump="20"><span>21</span>Cenário da aula</button><button type="button" data-jump="21"><span>22</span>Requisitos levantados</button><button type="button" data-jump="22"><span>23</span>Regras de negócio</button><button type="button" data-jump="23"><span>24</span>Tipos de atributos</button><button type="button" data-jump="24"><span>25</span>Atributo composto</button><button type="button" data-jump="25"><span>26</span>Atributo multivalorado</button><button type="button" data-jump="26"><span>27</span>Atributo derivado</button><button type="button" data-jump="27"><span>28</span>Prototipação relacional</button><button type="button" data-jump="28"><span>29</span>Entidades do protótipo</button><button type="button" data-jump="29"><span>30</span>Relacionamentos do protótipo</button><button type="button" data-jump="30"><span>31</span>Criar banco do protótipo</button><button type="button" data-jump="31"><span>32</span>Tabela clientes</button><button type="button" data-jump="32"><span>33</span>Tabela equipamentos</button><button type="button" data-jump="33"><span>34</span>Tabela técnicos</button><button type="button" data-jump="34"><span>35</span>Tabela ordens de serviço</button><button type="button" data-jump="35"><span>36</span>Inserir clientes</button><button type="button" data-jump="36"><span>37</span>Inserir dados relacionados</button><button type="button" data-jump="37"><span>38</span>Inserir ordens de serviço</button><button type="button" data-jump="38"><span>39</span>Consultas de validação</button><button type="button" data-jump="39"><span>40</span>View com idade derivada</button><button type="button" data-jump="40"><span>41</span>View de resumo das ordens</button><button type="button" data-jump="41"><span>42</span>Backup e recuperação de falhas</button><button type="button" data-jump="42"><span>43</span>Tipos básicos de backup</button><button type="button" data-jump="43"><span>44</span>Backup no MySQL Workbench</button><button type="button" data-jump="44"><span>45</span>Simulação de falha</button><button type="button" data-jump="45"><span>46</span>Restauração no MySQL Workbench</button><button type="button" data-jump="46"><span>47</span>Atividade dos alunos</button><button type="button" data-jump="47"><span>48</span>Exercícios de fixação</button><button type="button" data-jump="48"><span>49</span>Fechamento</button></div></div></div>
+<main class="deck" id="deck">
+<section class="slide title" data-title="Arquitetura, Modelagem, Multiusuário, Backup e Prototipação de Banco de Dados">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Curso Administrador de Banco de Dados</div>
+<h1>Arquitetura, Modelagem, Multiusuário, Backup e Prototipação de Banco de Dados</h1>
+<p class="lead">Aula de reforço dos pontos pendentes da matriz curricular, com foco em compreensão do SGBD, modelagem e aplicação no MySQL.</p>
+<ul class="bullets"><li>Ambiente e arquitetura de SGBD</li><li>Arquitetura de três níveis</li><li>SGBD multiusuário</li><li>Modelagem de requisitos</li><li>Tipos de atributos</li><li>Protótipo relacional</li><li>Backup e restauração</li></ul>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>1/49</span></div>
+</div></section>
+<section class="slide " data-title="Objetivo da aula">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Visão geral</div>
+<h1>Objetivo da aula</h1>
+<p class="lead">Conduzir o aluno do entendimento do ambiente de banco de dados até a construção de um protótipo relacional funcional.</p>
+<ul class="bullets"><li>Entender como o MySQL funciona em arquitetura cliente-servidor.</li><li>Compreender como vários usuários acessam o mesmo banco.</li><li>Transformar uma necessidade real em entidades, atributos, relacionamentos e tabelas.</li><li>Criar consultas, views e procedimentos de backup e restauração.</li></ul>
+<div class="note"><strong>Observação:</strong> Banco de dados não começa no SQL. Começa no entendimento do problema.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>2/49</span></div>
+</div></section>
+<section class="slide " data-title="Roteiro da aula">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Organização</div>
+<h1>Roteiro da aula</h1>
+<p class="lead">A aula será conduzida em blocos curtos, com explicação, exemplos e comandos no MySQL.</p>
+<div class="table-wrap"><table><tr><th>Bloco</th><th>Conteúdo</th></tr><tr><td>1</td><td>Ambiente e arquitetura de SGBD</td></tr><tr><td>2</td><td>Arquitetura de três níveis</td></tr><tr><td>3</td><td>SGBD multiusuário e concorrência</td></tr><tr><td>4</td><td>Modelagem de requisitos</td></tr><tr><td>5</td><td>Tipos de atributos</td></tr><tr><td>6</td><td>Prototipação relacional no MySQL</td></tr><tr><td>7</td><td>Backup e restauração</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>3/49</span></div>
+</div></section>
+<section class="slide " data-title="O que é um SGBD?">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Conceito fundamental</div>
+<h1>O que é um SGBD?</h1>
+<p class="lead">SGBD significa Sistema de Gerenciamento de Banco de Dados. Ele é o software que armazena, organiza, consulta, protege e controla os dados.</p>
+<ul class="bullets"><li>Recebe comandos SQL.</li><li>Verifica permissões.</li><li>Controla integridade e relacionamentos.</li><li>Permite múltiplos acessos.</li><li>Organiza dados em bancos, tabelas, campos e registros.</li><li>Apoia recuperação em caso de falha.</li></ul>
+<div class="note"><strong>Observação:</strong> O SGBD funciona como o centro de controle das informações.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>4/49</span></div>
+</div></section>
+<section class="slide " data-title="Exemplos de SGBD">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Mercado e prática</div>
+<h1>Exemplos de SGBD</h1>
+<p class="lead">Existem SGBDs livres e proprietários. Nesta aula, o foco prático será o MySQL.</p>
+<div class="table-wrap"><table><tr><th>SGBD</th><th>Característica</th></tr><tr><td>MySQL</td><td>Livre, usado em sistemas web, educacionais e corporativos.</td></tr><tr><td>PostgreSQL</td><td>Livre, robusto e muito usado em aplicações corporativas.</td></tr><tr><td>SQL Server</td><td>Proprietário, da Microsoft.</td></tr><tr><td>Oracle Database</td><td>Proprietário, comum em grandes empresas.</td></tr><tr><td>MariaDB</td><td>Livre, derivado do MySQL.</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>5/49</span></div>
+</div></section>
+<section class="slide " data-title="MySQL Server, Workbench e Banco de Dados">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Evitar confusão</div>
+<h1>MySQL Server, Workbench e Banco de Dados</h1>
+<p class="lead">Uma dúvida comum é confundir a ferramenta visual com o banco. O Workbench não é o banco; ele é apenas uma ferramenta de acesso.</p>
+<div class="table-wrap"><table><tr><th>Elemento</th><th>Função</th></tr><tr><td>MySQL Server</td><td>Serviço que armazena e processa os dados.</td></tr><tr><td>MySQL Workbench</td><td>Ferramenta gráfica usada para acessar o servidor.</td></tr><tr><td>Banco de dados</td><td>Conjunto organizado de tabelas.</td></tr><tr><td>Tabela</td><td>Estrutura que armazena registros.</td></tr><tr><td>Registro</td><td>Uma linha dentro da tabela.</td></tr><tr><td>Campo</td><td>Uma coluna da tabela.</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>6/49</span></div>
+</div></section>
+<section class="slide " data-title="Arquitetura cliente-servidor">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Como o MySQL trabalha</div>
+<h1>Arquitetura cliente-servidor</h1>
+<p class="lead">No modelo cliente-servidor, uma ferramenta cliente envia comandos SQL para o servidor. O servidor processa e devolve o resultado.</p>
+<ul class="bullets"><li>Cliente: MySQL Workbench, sistema web, aplicativo, API ou terminal.</li><li>Servidor: MySQL Server, responsável por processar o comando.</li><li>Banco de dados: local lógico onde as tabelas ficam organizadas.</li><li>Conexão: caminho usado para comunicação entre cliente e servidor.</li></ul>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>MySQL Workbench  →  MySQL Server  →  Banco de Dados
+Cliente          →  Servidor      →  Dados</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>7/49</span></div>
+</div></section>
+<section class="slide " data-title="O que acontece em um SELECT?">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Fluxo de execução</div>
+<h1>O que acontece em um SELECT?</h1>
+<p class="lead">Quando executamos uma consulta, o comando passa por etapas até o resultado aparecer na tela.</p>
+<ul class="bullets"><li>O cliente envia o SQL ao servidor.</li><li>O servidor interpreta o comando.</li><li>O servidor verifica permissões.</li><li>O servidor localiza os dados solicitados.</li><li>O resultado retorna para o cliente.</li></ul>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>SELECT * FROM clientes;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>8/49</span></div>
+</div></section>
+<section class="slide " data-title="Arquitetura de três níveis">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Visões do banco de dados</div>
+<h1>Arquitetura de três níveis</h1>
+<p class="lead">A arquitetura de três níveis separa o banco em três visões: externa, conceitual e interna.</p>
+<div class="table-wrap"><table><tr><th>Nível</th><th>Significado</th></tr><tr><td>Externo</td><td>O que cada usuário ou aplicação precisa visualizar.</td></tr><tr><td>Conceitual</td><td>O desenho geral do banco: entidades, atributos e relacionamentos.</td></tr><tr><td>Interno</td><td>Como o SGBD grava, indexa, bloqueia e recupera os dados.</td></tr></table></div>
+<div class="note"><strong>Observação:</strong> Essa separação ajuda a esconder complexidade e proteger informações.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>9/49</span></div>
+</div></section>
+<section class="slide " data-title="Nível externo">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Visão do usuário</div>
+<h1>Nível externo</h1>
+<p class="lead">O nível externo representa aquilo que determinado usuário precisa enxergar. Nem todos devem ver todos os campos.</p>
+<ul class="bullets"><li>Um atendente pode ver nome, cidade e telefone.</li><li>Dados sensíveis podem permanecer protegidos.</li><li>Uma VIEW pode representar essa visão simplificada.</li></ul>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE VIEW vw_clientes_basico AS
+SELECT
+    id_cliente,
+    nome,
+    cidade
+FROM clientes;
+
+SELECT * FROM vw_clientes_basico;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>10/49</span></div>
+</div></section>
+<section class="slide " data-title="Nível conceitual">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Visão do projeto</div>
+<h1>Nível conceitual</h1>
+<p class="lead">O nível conceitual mostra o desenho geral do banco antes do SQL. É nele que entendemos o negócio.</p>
+<ul class="bullets"><li>Quais entidades existem?</li><li>Quais atributos cada entidade possui?</li><li>Quais relacionamentos ligam essas entidades?</li><li>Quais regras de negócio precisam ser respeitadas?</li></ul>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>Cliente possui Equipamento
+Cliente abre Ordem de Serviço
+Técnico atende Ordem de Serviço</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>11/49</span></div>
+</div></section>
+<section class="slide " data-title="Nível interno">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Visão do armazenamento</div>
+<h1>Nível interno</h1>
+<p class="lead">O nível interno trata da forma como o SGBD grava, localiza e protege fisicamente os dados.</p>
+<ul class="bullets"><li>Arquivos internos do banco.</li><li>Índices usados para acelerar buscas.</li><li>Bloqueios em operações simultâneas.</li><li>Controle de transações com COMMIT e ROLLBACK.</li><li>Motor de armazenamento, como InnoDB.</li></ul>
+<div class="note"><strong>Observação:</strong> O InnoDB suporta transações, chaves estrangeiras e integridade referencial.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>12/49</span></div>
+</div></section>
+<section class="slide " data-title="SGBD multiusuário">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Acesso simultâneo</div>
+<h1>SGBD multiusuário</h1>
+<p class="lead">Um SGBD multiusuário permite que várias pessoas acessem o banco ao mesmo tempo, sem perder a consistência dos dados.</p>
+<ul class="bullets"><li>Atendente cadastra cliente.</li><li>Estoquista atualiza produto.</li><li>Gerente consulta relatório.</li><li>Sistema registra venda.</li><li>Administrador executa manutenção.</li></ul>
+<div class="note"><strong>Observação:</strong> Em ambiente real, quase nunca existe apenas uma pessoa usando o sistema.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>13/49</span></div>
+</div></section>
+<section class="slide " data-title="Problemas em ambiente multiusuário">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Concorrência e consistência</div>
+<h1>Problemas em ambiente multiusuário</h1>
+<p class="lead">Quando várias pessoas acessam o mesmo dado, o SGBD precisa controlar conflitos.</p>
+<div class="table-wrap"><table><tr><th>Problema</th><th>Explicação</th></tr><tr><td>Concorrência</td><td>Dois usuários tentam alterar o mesmo registro.</td></tr><tr><td>Inconsistência</td><td>Os dados ficam incoerentes após alterações simultâneas.</td></tr><tr><td>Bloqueio</td><td>Um usuário aguarda o outro finalizar a operação.</td></tr><tr><td>Falha de transação</td><td>A operação começa, mas não é concluída.</td></tr><tr><td>Permissão indevida</td><td>Usuário acessa algo que não deveria.</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>14/49</span></div>
+</div></section>
+<section class="slide " data-title="Como o MySQL ajuda?">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>InnoDB e controle</div>
+<h1>Como o MySQL ajuda?</h1>
+<p class="lead">O MySQL, usando InnoDB, reduz riscos em ambiente multiusuário.</p>
+<ul class="bullets"><li>Transações agrupam operações.</li><li>Bloqueios protegem registros durante alterações.</li><li>Chaves estrangeiras preservam integridade relacional.</li><li>Permissões controlam quem pode acessar e alterar dados.</li><li>COMMIT confirma e ROLLBACK desfaz alterações não confirmadas.</li></ul>
+<div class="note"><strong>Observação:</strong> O objetivo é manter os dados corretos mesmo com vários acessos ao mesmo tempo.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>15/49</span></div>
+</div></section>
+<section class="slide " data-title="Prática: banco multiusuário">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Preparação</div>
+<h1>Prática: banco multiusuário</h1>
+<p class="lead">Crie o banco e a tabela de contas para demonstrar transações e bloqueios.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE DATABASE aula_multiusuario;
+
+USE aula_multiusuario;
+
+CREATE TABLE contas (
+    id_conta INT AUTO_INCREMENT PRIMARY KEY,
+    titular VARCHAR(100) NOT NULL,
+    saldo DECIMAL(10,2) NOT NULL CHECK (saldo &gt;= 0)
+) ENGINE=InnoDB;
+
+INSERT INTO contas (titular, saldo) VALUES
+(&#x27;Cliente A&#x27;, 1000.00),
+(&#x27;Cliente B&#x27;, 500.00);
+
+SELECT * FROM contas;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>16/49</span></div>
+</div></section>
+<section class="slide " data-title="Prática: Conexão 1">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Transação aberta</div>
+<h1>Prática: Conexão 1</h1>
+<p class="lead">Na primeira janela ou conexão, execute uma alteração sem confirmar imediatamente.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>USE aula_multiusuario;
+
+START TRANSACTION;
+
+UPDATE contas
+SET saldo = saldo - 100
+WHERE id_conta = 1;
+
+SELECT * FROM contas;</code></pre>
+<div class="note"><strong>Observação:</strong> A alteração foi feita dentro da transação, mas ainda não foi confirmada com COMMIT.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>17/49</span></div>
+</div></section>
+<section class="slide " data-title="Prática: Conexão 2">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Teste de concorrência</div>
+<h1>Prática: Conexão 2</h1>
+<p class="lead">Na segunda janela ou conexão, tente consultar e alterar o mesmo registro.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>USE aula_multiusuario;
+
+SELECT * FROM contas;
+
+UPDATE contas
+SET saldo = saldo - 50
+WHERE id_conta = 1;</code></pre>
+<div class="note"><strong>Observação:</strong> A segunda conexão pode aguardar a primeira finalizar, pois o banco protege o mesmo registro contra alteração conflitante.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>18/49</span></div>
+</div></section>
+<section class="slide " data-title="Finalizar a transação">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>COMMIT ou ROLLBACK</div>
+<h1>Finalizar a transação</h1>
+<p class="lead">Na primeira conexão, finalize a transação escolhendo confirmar ou desfazer.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>-- Confirmar a operação
+COMMIT;
+
+-- ou desfazer a operação
+ROLLBACK;</code></pre>
+<div class="note"><strong>Observação:</strong> Esse exemplo mostra como o banco controla alterações simultâneas para preservar consistência.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>19/49</span></div>
+</div></section>
+<section class="slide " data-title="Modelagem de requisitos">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Antes do CREATE TABLE</div>
+<h1>Modelagem de requisitos</h1>
+<p class="lead">Modelagem de requisitos é a etapa em que entendemos o que o sistema precisa fazer antes de criar as tabelas.</p>
+<ul class="bullets"><li>Qual problema o sistema resolve?</li><li>Quais dados precisam ser armazenados?</li><li>Quem usará o sistema?</li><li>Quais cadastros serão necessários?</li><li>Quais relatórios ou consultas serão importantes?</li><li>Quais regras de negócio não podem ser violadas?</li></ul>
+<div class="note"><strong>Observação:</strong> Um erro comum é começar pelo SQL sem entender o problema.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>20/49</span></div>
+</div></section>
+<section class="slide " data-title="Cenário da aula">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Controle de Ordens de Serviço</div>
+<h1>Cenário da aula</h1>
+<p class="lead">Uma empresa de suporte técnico precisa controlar clientes, telefones, equipamentos, técnicos e ordens de serviço.</p>
+<ul class="bullets"><li>Cadastrar clientes e seus telefones.</li><li>Vincular equipamentos aos clientes.</li><li>Cadastrar técnicos responsáveis.</li><li>Registrar ordens de serviço.</li><li>Consultar ordens em aberto e resumir atendimentos.</li></ul>
+<div class="note"><strong>Observação:</strong> Esse cenário será usado para construir o protótipo relacional.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>21/49</span></div>
+</div></section>
+<section class="slide " data-title="Requisitos levantados">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Do problema para o banco</div>
+<h1>Requisitos levantados</h1>
+<p class="lead">Os requisitos descrevem o que o sistema deve atender.</p>
+<div class="table-wrap"><table><tr><th>Código</th><th>Requisito</th></tr><tr><td>R1</td><td>Cadastrar clientes.</td></tr><tr><td>R2</td><td>Cada cliente pode possuir um ou mais equipamentos.</td></tr><tr><td>R3</td><td>Cada equipamento pertence a um único cliente.</td></tr><tr><td>R4</td><td>Cadastrar técnicos.</td></tr><tr><td>R5</td><td>Um cliente pode abrir várias ordens de serviço.</td></tr><tr><td>R6</td><td>Cada ordem deve estar vinculada a um cliente.</td></tr><tr><td>R7</td><td>Cada ordem pode ser atendida por um técnico.</td></tr><tr><td>R8</td><td>A ordem deve possuir data, status e descrição.</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>22/49</span></div>
+</div></section>
+<section class="slide " data-title="Regras de negócio">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Critérios obrigatórios</div>
+<h1>Regras de negócio</h1>
+<p class="lead">As regras de negócio indicam condições que o banco precisa respeitar.</p>
+<div class="table-wrap"><table><tr><th>Regra</th><th>Descrição</th></tr><tr><td>RN1</td><td>CPF do cliente não pode repetir.</td></tr><tr><td>RN2</td><td>Nome do cliente é obrigatório.</td></tr><tr><td>RN3</td><td>Uma ordem não pode existir sem cliente.</td></tr><tr><td>RN4</td><td>O status da ordem deve ser controlado.</td></tr><tr><td>RN5</td><td>A data de abertura deve ser registrada.</td></tr><tr><td>RN6</td><td>Telefone pode ser mais de um por cliente.</td></tr><tr><td>RN7</td><td>Idade pode ser calculada pela data de nascimento.</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>23/49</span></div>
+</div></section>
+<section class="slide " data-title="Tipos de atributos">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Base da modelagem</div>
+<h1>Tipos de atributos</h1>
+<p class="lead">Atributos são as características de uma entidade. Identificar o tipo de atributo ajuda a decidir como ele será armazenado.</p>
+<div class="table-wrap"><table><tr><th>Tipo</th><th>Exemplo</th></tr><tr><td>Atômico</td><td>CPF, RG, preço, quantidade.</td></tr><tr><td>Composto</td><td>Endereço completo dividido em rua, número, bairro, cidade, estado e CEP.</td></tr><tr><td>Monovalorado</td><td>Data de nascimento, CPF, nome.</td></tr><tr><td>Multivalorado</td><td>Telefones de um cliente.</td></tr><tr><td>Derivado</td><td>Idade calculada pela data de nascimento.</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>24/49</span></div>
+</div></section>
+<section class="slide " data-title="Atributo composto">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Endereço dividido</div>
+<h1>Atributo composto</h1>
+<p class="lead">Quando um dado pode ser separado em partes úteis, ele é composto. Endereço é o exemplo mais comum.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>rua VARCHAR(100),
+numero VARCHAR(10),
+bairro VARCHAR(80),
+cidade VARCHAR(80),
+estado CHAR(2),
+cep VARCHAR(10)</code></pre>
+<div class="note"><strong>Observação:</strong> Separar o endereço facilita filtros e relatórios por cidade, bairro ou estado.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>25/49</span></div>
+</div></section>
+<section class="slide " data-title="Atributo multivalorado">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Evitar telefone1, telefone2, telefone3</div>
+<h1>Atributo multivalorado</h1>
+<p class="lead">Quando um cliente pode ter vários telefones, o ideal é criar uma tabela separada.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE TABLE cliente_telefones (
+    id_telefone INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    telefone VARCHAR(20) NOT NULL,
+    tipo VARCHAR(30),
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+) ENGINE=InnoDB;</code></pre>
+<div class="note"><strong>Observação:</strong> Isso evita repetição de colunas e melhora a estrutura relacional.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>26/49</span></div>
+</div></section>
+<section class="slide " data-title="Atributo derivado">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Idade calculada</div>
+<h1>Atributo derivado</h1>
+<p class="lead">A idade não precisa ser gravada na tabela, porque muda com o tempo. Ela pode ser calculada pela data de nascimento.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>TIMESTAMPDIFF(YEAR, data_nascimento, CURDATE()) AS idade</code></pre>
+<div class="note"><strong>Observação:</strong> Gravamos a data de nascimento; calculamos a idade na consulta.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>27/49</span></div>
+</div></section>
+<section class="slide " data-title="Prototipação relacional">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Do problema ao SQL</div>
+<h1>Prototipação relacional</h1>
+<p class="lead">Prototipar é criar uma primeira versão funcional do banco para testar se a modelagem atende ao cenário.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>Problema real
+↓
+Requisitos
+↓
+Entidades
+↓
+Atributos
+↓
+Relacionamentos
+↓
+DER / Modelo conceitual
+↓
+Modelo lógico
+↓
+Modelo físico / SQL
+↓
+Protótipo no MySQL</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>28/49</span></div>
+</div></section>
+<section class="slide " data-title="Entidades do protótipo">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Ordem de serviço</div>
+<h1>Entidades do protótipo</h1>
+<p class="lead">Para o cenário proposto, identificamos as entidades principais.</p>
+<div class="table-wrap"><table><tr><th>Entidade</th><th>Representa</th></tr><tr><td>Cliente</td><td>Pessoa ou empresa que solicita atendimento.</td></tr><tr><td>Telefone do Cliente</td><td>Telefones vinculados ao cliente.</td></tr><tr><td>Equipamento</td><td>Equipamento pertencente ao cliente.</td></tr><tr><td>Técnico</td><td>Profissional que atende a ordem.</td></tr><tr><td>Ordem de Serviço</td><td>Solicitação de atendimento.</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>29/49</span></div>
+</div></section>
+<section class="slide " data-title="Relacionamentos do protótipo">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Cardinalidade simplificada</div>
+<h1>Relacionamentos do protótipo</h1>
+<p class="lead">Os relacionamentos indicam como as entidades se conectam.</p>
+<div class="table-wrap"><table><tr><th>Relacionamento</th><th>Tipo</th></tr><tr><td>Cliente possui telefones</td><td>1 para N</td></tr><tr><td>Cliente possui equipamentos</td><td>1 para N</td></tr><tr><td>Cliente abre ordens de serviço</td><td>1 para N</td></tr><tr><td>Técnico atende ordens de serviço</td><td>1 para N</td></tr><tr><td>Equipamento pode aparecer em ordens</td><td>1 para N</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>30/49</span></div>
+</div></section>
+<section class="slide " data-title="Criar banco do protótipo">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>MySQL</div>
+<h1>Criar banco do protótipo</h1>
+<p class="lead">Inicie a prática criando o banco de dados da aula.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE DATABASE aula_modelagem_os;
+
+USE aula_modelagem_os;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>31/49</span></div>
+</div></section>
+<section class="slide " data-title="Tabela clientes">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Modelo físico</div>
+<h1>Tabela clientes</h1>
+<p class="lead">A tabela clientes reúne dados básicos, endereço separado em campos e data de nascimento para cálculo da idade.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE TABLE clientes (
+    id_cliente INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    cpf VARCHAR(14) NOT NULL UNIQUE,
+    data_nascimento DATE,
+    rua VARCHAR(100),
+    numero VARCHAR(10),
+    bairro VARCHAR(80),
+    cidade VARCHAR(80),
+    estado CHAR(2),
+    cep VARCHAR(10),
+    data_cadastro DATE DEFAULT (CURRENT_DATE)
+) ENGINE=InnoDB;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>32/49</span></div>
+</div></section>
+<section class="slide " data-title="Tabela equipamentos">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Cliente possui equipamentos</div>
+<h1>Tabela equipamentos</h1>
+<p class="lead">Cada equipamento pertence a um cliente, por isso a tabela possui chave estrangeira para clientes.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE TABLE equipamentos (
+    id_equipamento INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    tipo VARCHAR(50) NOT NULL,
+    marca VARCHAR(50),
+    modelo VARCHAR(50),
+    numero_serie VARCHAR(80),
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+) ENGINE=InnoDB;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>33/49</span></div>
+</div></section>
+<section class="slide " data-title="Tabela técnicos">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Profissionais responsáveis</div>
+<h1>Tabela técnicos</h1>
+<p class="lead">A tabela técnicos registra quem pode atender as ordens de serviço.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE TABLE tecnicos (
+    id_tecnico INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    especialidade VARCHAR(80),
+    ativo CHAR(1) DEFAULT &#x27;S&#x27; CHECK (ativo IN (&#x27;S&#x27;, &#x27;N&#x27;))
+) ENGINE=InnoDB;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>34/49</span></div>
+</div></section>
+<section class="slide " data-title="Tabela ordens de serviço">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Relacionando cliente, equipamento e técnico</div>
+<h1>Tabela ordens de serviço</h1>
+<p class="lead">A ordem de serviço é a entidade central do protótipo.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE TABLE ordens_servico (
+    id_os INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    id_equipamento INT,
+    id_tecnico INT,
+    data_abertura DATE DEFAULT (CURRENT_DATE),
+    data_fechamento DATE,
+    status_os VARCHAR(30) DEFAULT &#x27;Aberta&#x27;,
+    descricao_problema VARCHAR(255) NOT NULL,
+    observacao VARCHAR(255),
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente),
+    FOREIGN KEY (id_equipamento) REFERENCES equipamentos(id_equipamento),
+    FOREIGN KEY (id_tecnico) REFERENCES tecnicos(id_tecnico),
+    CHECK (status_os IN (&#x27;Aberta&#x27;, &#x27;Em atendimento&#x27;, &#x27;Finalizada&#x27;, &#x27;Cancelada&#x27;))
+) ENGINE=InnoDB;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>35/49</span></div>
+</div></section>
+<section class="slide " data-title="Inserir clientes">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Dados de teste</div>
+<h1>Inserir clientes</h1>
+<p class="lead">Insira registros iniciais para validar o protótipo.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>INSERT INTO clientes
+(nome, cpf, data_nascimento, rua, numero, bairro, cidade, estado, cep) VALUES
+(&#x27;Ana Souza&#x27;, &#x27;111.111.111-11&#x27;, &#x27;1995-05-10&#x27;, &#x27;Rua A&#x27;, &#x27;100&#x27;, &#x27;Centro&#x27;, &#x27;Ibirité&#x27;, &#x27;MG&#x27;, &#x27;32400-000&#x27;),
+(&#x27;Carlos Lima&#x27;, &#x27;222.222.222-22&#x27;, &#x27;1988-09-21&#x27;, &#x27;Rua B&#x27;, &#x27;200&#x27;, &#x27;Industrial&#x27;, &#x27;Contagem&#x27;, &#x27;MG&#x27;, &#x27;32000-000&#x27;),
+(&#x27;Mariana Costa&#x27;, &#x27;333.333.333-33&#x27;, &#x27;2000-02-15&#x27;, &#x27;Rua C&#x27;, &#x27;300&#x27;, &#x27;Eldorado&#x27;, &#x27;Contagem&#x27;, &#x27;MG&#x27;, &#x27;32300-000&#x27;);</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>36/49</span></div>
+</div></section>
+<section class="slide " data-title="Inserir dados relacionados">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Telefones, equipamentos, técnicos e ordens</div>
+<h1>Inserir dados relacionados</h1>
+<p class="lead">Insira os dados complementares para testar relacionamentos.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>INSERT INTO cliente_telefones (id_cliente, telefone, tipo) VALUES
+(1, &#x27;3199999-1111&#x27;, &#x27;Celular&#x27;),
+(1, &#x27;313333-1111&#x27;, &#x27;Residencial&#x27;),
+(2, &#x27;3199999-2222&#x27;, &#x27;Celular&#x27;),
+(3, &#x27;3199999-3333&#x27;, &#x27;Celular&#x27;);
+
+INSERT INTO equipamentos (id_cliente, tipo, marca, modelo, numero_serie) VALUES
+(1, &#x27;Notebook&#x27;, &#x27;Dell&#x27;, &#x27;Inspiron&#x27;, &#x27;SN001&#x27;),
+(2, &#x27;Impressora&#x27;, &#x27;HP&#x27;, &#x27;LaserJet&#x27;, &#x27;SN002&#x27;),
+(3, &#x27;Desktop&#x27;, &#x27;Lenovo&#x27;, &#x27;ThinkCentre&#x27;, &#x27;SN003&#x27;);
+
+INSERT INTO tecnicos (nome, especialidade) VALUES
+(&#x27;João Técnico&#x27;, &#x27;Hardware&#x27;),
+(&#x27;Paula Suporte&#x27;, &#x27;Redes&#x27;),
+(&#x27;Rafael Sistemas&#x27;, &#x27;Software&#x27;);</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>37/49</span></div>
+</div></section>
+<section class="slide " data-title="Inserir ordens de serviço">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Registros centrais</div>
+<h1>Inserir ordens de serviço</h1>
+<p class="lead">Agora cadastre ordens vinculadas a clientes, equipamentos e técnicos.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>INSERT INTO ordens_servico
+(id_cliente, id_equipamento, id_tecnico, status_os, descricao_problema, observacao) VALUES
+(1, 1, 1, &#x27;Aberta&#x27;, &#x27;Notebook não liga&#x27;, NULL),
+(2, 2, 2, &#x27;Em atendimento&#x27;, &#x27;Impressora não conecta na rede&#x27;, &#x27;Verificar cabo e IP&#x27;),
+(3, 3, 3, &#x27;Finalizada&#x27;, &#x27;Sistema lento&#x27;, &#x27;Realizada limpeza e atualização&#x27;);</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>38/49</span></div>
+</div></section>
+<section class="slide " data-title="Consultas de validação">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Conferir resultados</div>
+<h1>Consultas de validação</h1>
+<p class="lead">Depois de criar e inserir dados, valide o protótipo com consultas.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>SELECT * FROM clientes;
+
+SELECT
+    c.nome,
+    t.telefone,
+    t.tipo
+FROM clientes c
+INNER JOIN cliente_telefones t
+    ON c.id_cliente = t.id_cliente;
+
+SELECT
+    os.id_os,
+    c.nome AS cliente,
+    tec.nome AS tecnico,
+    os.status_os,
+    os.descricao_problema,
+    os.data_abertura
+FROM ordens_servico os
+INNER JOIN clientes c ON os.id_cliente = c.id_cliente
+LEFT JOIN tecnicos tec ON os.id_tecnico = tec.id_tecnico;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>39/49</span></div>
+</div></section>
+<section class="slide " data-title="View com idade derivada">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Atributo calculado</div>
+<h1>View com idade derivada</h1>
+<p class="lead">A idade é calculada pela data de nascimento, sem precisar ser armazenada diretamente.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE VIEW vw_clientes_idade AS
+SELECT
+    id_cliente,
+    nome,
+    cpf,
+    data_nascimento,
+    TIMESTAMPDIFF(YEAR, data_nascimento, CURDATE()) AS idade,
+    cidade,
+    estado
+FROM clientes;
+
+SELECT * FROM vw_clientes_idade;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>40/49</span></div>
+</div></section>
+<section class="slide " data-title="View de resumo das ordens">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Consulta pronta para relatório</div>
+<h1>View de resumo das ordens</h1>
+<p class="lead">A view organiza informações de várias tabelas em uma visão resumida.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>CREATE VIEW vw_resumo_ordens AS
+SELECT
+    os.id_os,
+    c.nome AS cliente,
+    e.tipo AS equipamento,
+    e.marca,
+    tec.nome AS tecnico,
+    os.status_os,
+    os.descricao_problema,
+    COALESCE(os.observacao, &#x27;Sem observação&#x27;) AS observacao,
+    os.data_abertura,
+    os.data_fechamento
+FROM ordens_servico os
+INNER JOIN clientes c ON os.id_cliente = c.id_cliente
+LEFT JOIN equipamentos e ON os.id_equipamento = e.id_equipamento
+LEFT JOIN tecnicos tec ON os.id_tecnico = tec.id_tecnico;
+
+SELECT * FROM vw_resumo_ordens;</code></pre>
+<div class="note"><strong>Observação:</strong> COALESCE retorna o primeiro valor não nulo. Se observação estiver vazia, aparece &#x27;Sem observação&#x27;.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>41/49</span></div>
+</div></section>
+<section class="slide " data-title="Backup e recuperação de falhas">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Continuidade</div>
+<h1>Backup e recuperação de falhas</h1>
+<p class="lead">Backup é uma cópia de segurança dos dados. Ele permite recuperar informações quando ocorre falha, erro ou exclusão acidental.</p>
+<ul class="bullets"><li>Exclusão acidental.</li><li>Erro em comando SQL.</li><li>Falha no servidor.</li><li>Corrupção da base.</li><li>Problema no computador.</li><li>Ataque ou acesso indevido.</li><li>Troca ou migração de sistema.</li></ul>
+<div class="note"><strong>Observação:</strong> Banco sem backup está sempre em risco.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>42/49</span></div>
+</div></section>
+<section class="slide " data-title="Tipos básicos de backup">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Classificação</div>
+<h1>Tipos básicos de backup</h1>
+<p class="lead">Para a turma, o foco principal é o backup lógico pelo MySQL Workbench.</p>
+<div class="table-wrap"><table><tr><th>Tipo</th><th>Explicação</th></tr><tr><td>Backup lógico</td><td>Exporta estrutura e dados em comandos SQL.</td></tr><tr><td>Backup físico</td><td>Copia arquivos internos do banco.</td></tr><tr><td>Backup completo</td><td>Copia toda a base.</td></tr><tr><td>Backup parcial</td><td>Copia apenas parte da base.</td></tr><tr><td>Backup manual</td><td>Executado pelo usuário.</td></tr><tr><td>Backup automático</td><td>Executado por rotina programada.</td></tr></table></div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>43/49</span></div>
+</div></section>
+<section class="slide " data-title="Backup no MySQL Workbench">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Data Export</div>
+<h1>Backup no MySQL Workbench</h1>
+<p class="lead">Roteiro de exportação para gerar arquivo .sql.</p>
+<ul class="bullets"><li>Abrir o MySQL Workbench.</li><li>Conectar ao servidor.</li><li>Ir ao menu Server.</li><li>Clicar em Data Export.</li><li>Selecionar o banco aula_modelagem_os.</li><li>Marcar as tabelas.</li><li>Escolher exportação para arquivo .sql.</li><li>Clicar em Start Export.</li></ul>
+<div class="note"><strong>Observação:</strong> O arquivo exportado será usado para restauração em caso de falha.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>44/49</span></div>
+</div></section>
+<section class="slide " data-title="Simulação de falha">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Ambiente de aula</div>
+<h1>Simulação de falha</h1>
+<p class="lead">Depois de exportar o backup, é possível simular uma perda da base em ambiente controlado.</p>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>DROP DATABASE aula_modelagem_os;</code></pre>
+<div class="note"><strong>Observação:</strong> Este comando apaga a base inteira. Use apenas em ambiente de aula e depois de fazer backup.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>45/49</span></div>
+</div></section>
+<section class="slide " data-title="Restauração no MySQL Workbench">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Data Import</div>
+<h1>Restauração no MySQL Workbench</h1>
+<p class="lead">Roteiro de importação para restaurar o arquivo .sql gerado no backup.</p>
+<ul class="bullets"><li>Ir ao menu Server.</li><li>Clicar em Data Import.</li><li>Selecionar o arquivo .sql exportado.</li><li>Executar a importação.</li><li>Conferir se o banco retornou corretamente.</li></ul>
+<pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>USE aula_modelagem_os;
+
+SHOW TABLES;
+
+SELECT * FROM clientes;
+
+SELECT * FROM vw_resumo_ordens;</code></pre>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>46/49</span></div>
+</div></section>
+<section class="slide " data-title="Atividade dos alunos">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Aplicação do conteúdo</div>
+<h1>Atividade dos alunos</h1>
+<p class="lead">Cada aluno deverá montar o protótipo e demonstrar que compreendeu modelagem, views e backup.</p>
+<ul class="bullets"><li>Criar o banco aula_modelagem_os.</li><li>Criar as tabelas clientes, cliente_telefones, equipamentos, tecnicos e ordens_servico.</li><li>Inserir dados de exemplo.</li><li>Criar view de idade e view de resumo das ordens.</li><li>Classificar atributos por tipo.</li><li>Realizar backup, simular exclusão e restaurar o banco.</li><li>Executar SELECT final comprovando a restauração.</li></ul>
+<div class="note"><strong>Observação:</strong> A entrega pode ser feita por script SQL ou execução acompanhada no laboratório.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>47/49</span></div>
+</div></section>
+<section class="slide " data-title="Exercícios de fixação">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Revisão rápida</div>
+<h1>Exercícios de fixação</h1>
+<p class="lead">Responda com suas palavras.</p>
+<ul class="bullets"><li>Qual a diferença entre MySQL Server e MySQL Workbench?</li><li>O que é arquitetura cliente-servidor?</li><li>Quais são os três níveis da arquitetura de banco de dados?</li><li>O que é um SGBD multiusuário?</li><li>Por que telefone pode ser multivalorado?</li><li>Por que idade é atributo derivado?</li><li>Por que backup é necessário?</li></ul>
+<div class="note"><strong>Observação:</strong> O objetivo é verificar entendimento, não apenas memorização.</div>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>48/49</span></div>
+</div></section>
+<section class="slide closing" data-title="Fechamento">
+<div class="card">
+<div class="eyebrow"><span class="dot"></span>Mensagem final</div>
+<h1>Fechamento</h1>
+<p class="lead">Um bom profissional de banco de dados não é apenas quem sabe criar tabelas. É quem entende o dado, protege a informação, organiza a estrutura, evita perdas e cria soluções que funcionam com segurança no mundo real.</p>
+<ul class="bullets"><li>Primeiro vem o problema.</li><li>Depois vêm os requisitos.</li><li>Em seguida vêm entidades, atributos e relacionamentos.</li><li>Só então entramos no SQL.</li><li>E sempre com segurança, consistência e backup.</li></ul>
+<div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>49/49</span></div>
+</div></section>
+</main>
+<nav class="controls" aria-label="Navegação dos slides">
+  <button type="button" id="first" title="Primeiro">⟨⟨</button>
+  <button type="button" id="prev" title="Anterior">⟨</button>
+  <div class="counter" id="counter">1/49</div>
+  <button type="button" id="next" title="Próximo">⟩</button>
+  <button type="button" id="last" title="Último">⟩⟩</button>
+  <button type="button" id="print" title="Imprimir">PDF</button>
+</nav>
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+const total=slides.length;
+const counter=document.getElementById('counter');
+const bar=document.getElementById('bar');
+const toc=document.getElementById('toc');
+let index=0;
+function show(i){
+  index=Math.max(0,Math.min(total-1,i));
+  slides.forEach((s,n)=>s.classList.toggle('active',n===index));
+  counter.textContent=(index+1)+'/'+total;
+  bar.style.width=((index+1)/total*100)+'%';
+  document.title=(index+1)+'/'+total+' - '+slides[index].dataset.title;
+}
+function next(){show(index+1)} function prev(){show(index-1)}
+document.getElementById('next').onclick=next;
+document.getElementById('prev').onclick=prev;
+document.getElementById('first').onclick=()=>show(0);
+document.getElementById('last').onclick=()=>show(total-1);
+document.getElementById('print').onclick=()=>window.print();
+document.getElementById('tocBtn').onclick=()=>toc.classList.toggle('open');
+document.querySelectorAll('[data-jump]').forEach(btn=>btn.onclick=()=>{show(Number(btn.dataset.jump));toc.classList.remove('open');});
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ') next();
+  if(e.key==='ArrowLeft'||e.key==='PageUp') prev();
+  if(e.key==='Home') show(0);
+  if(e.key==='End') show(total-1);
+  if(e.key==='Escape') toc.classList.remove('open');
+});
+let startX=0,startY=0;
+document.addEventListener('touchstart',e=>{startX=e.changedTouches[0].clientX;startY=e.changedTouches[0].clientY;},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-startX, dy=e.changedTouches[0].clientY-startY;
+  if(Math.abs(dx)>55 && Math.abs(dx)>Math.abs(dy)*1.2){ dx<0?next():prev(); }
+},{passive:true});
+document.querySelectorAll('.copy').forEach(btn=>{
+  btn.addEventListener('click',async()=>{
+    const code=btn.parentElement.querySelector('code').innerText;
+    try{await navigator.clipboard.writeText(code);btn.textContent='copiado';setTimeout(()=>btn.textContent='copiar',1200);}catch(e){btn.textContent='erro';setTimeout(()=>btn.textContent='copiar',1200);}
+  });
+});
+show(0);
+</script>
+</body>
+</html>
