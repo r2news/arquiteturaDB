@@ -362,7 +362,7 @@ cep VARCHAR(10)</code></pre>
 <h1>Atributo derivado</h1>
 <p class="lead">A idade não precisa ser gravada na tabela, porque muda com o tempo. Ela pode ser calculada pela data de nascimento.</p>
 <pre><button class="copy" type="button" aria-label="Copiar SQL">copiar</button><code>TIMESTAMPDIFF(YEAR, data_nascimento, CURDATE()) AS idade</code></pre>
-<div class="note"><strong>Observação:</strong> Gravamos a data de nascimento; calculamos a idade na consulta.</div>
+<div class="note"><strong>Observação:</strong> Gravamos a data de nascimento; calculamos a idade na consulta.<br><br><strong>TIMESTAMPDIFF:</strong> calcula a diferença entre duas datas. Neste exemplo, usa <span class="inline-code">YEAR</span> para retornar a diferença em anos.<br><strong>CURDATE():</strong> retorna a data atual do sistema no MySQL. Assim, a idade é calculada comparando <span class="inline-code">data_nascimento</span> com a data de hoje.</div>
 <div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>27/49</span></div>
 </div></section>
 <section class="slide " data-title="Prototipação relacional">
@@ -658,9 +658,9 @@ SELECT * FROM vw_resumo_ordens;</code></pre>
 <div class="card">
 <div class="eyebrow"><span class="dot"></span>Aplicação do conteúdo</div>
 <h1>Atividade dos alunos</h1>
-<p class="lead">Cada aluno deverá montar o protótipo e demonstrar que compreendeu modelagem, views e backup.</p>
+<p class="lead">Durante a prática no laboratório, os alunos irão desenvolver o protótipo passo a passo, aplicando modelagem, views e backup.</p>
 <ul class="bullets"><li>Criar o banco aula_modelagem_os.</li><li>Criar as tabelas clientes, cliente_telefones, equipamentos, tecnicos e ordens_servico.</li><li>Inserir dados de exemplo.</li><li>Criar view de idade e view de resumo das ordens.</li><li>Classificar atributos por tipo.</li><li>Realizar backup, simular exclusão e restaurar o banco.</li><li>Executar SELECT final comprovando a restauração.</li></ul>
-<div class="note"><strong>Observação:</strong> A entrega pode ser feita por script SQL ou execução acompanhada no laboratório.</div>
+<div class="note"><strong>Observação:</strong> Esta atividade não será entregue. Ela será desenvolvida durante a prática no laboratório, com acompanhamento e orientação do professor.</div>
 <div class="footer"><span>FHA/ESSA - PRONATE/FIC - Curso Administrador de Banco de Dados - Prof. Reinaldo Rodrigues - 2026</span><span>47/49</span></div>
 </div></section>
 <section class="slide " data-title="Exercícios de fixação">
